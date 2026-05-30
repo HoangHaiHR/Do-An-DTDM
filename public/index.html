@@ -2,43 +2,347 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Đồ Án Cloud Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Chat Real-time</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f7f6; }
-        #chat-box { width: 400px; height: 300px; border: 1px solid #ccc; background: #fff; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
-        input { width: 310px; padding: 8px; }
-        button { padding: 8px; }
+        /* Base Setup & Animated Background */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a, #1e1b4b, #311042);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            overflow: hidden;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glassmorphism Container */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.3s ease;
+        }
+
+        /* --- SCREEN 1: LOGIN (USERNAME ENTRY) --- */
+        #login-screen {
+            padding: 40px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .logo-area h2 {
+            color: #fff;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.6);
+        }
+        .logo-area p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 30px; }
+        .input-group { position: relative; margin-bottom: 25px; }
+        .input-group input {
+            width: 100%;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            outline: none;
+            color: #fff;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+        .input-group input:focus {
+            border-color: #00f2fe;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .btn-neon {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(90deg, #00f2fe, #4facfe);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            transition: 0.3s;
+        }
+        .btn-neon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.8);
+        }
+
+        /* --- SCREEN 2: MAIN CHAT INTERFACE --- */
+        #chat-screen {
+            display: none; /* Mặc định ẩn, hiện sau khi nhập tên */
+            width: 95%;
+            max-width: 900px;
+            height: 85vh;
+            grid-template-columns: 280px 1fr;
+        }
+
+        /* Sidebar Left */
+        .sidebar {
+            padding: 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .brand {
+            color: #fff;
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-shadow: 0 0 8px rgba(0, 242, 254, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title { color: rgba(255, 255, 255, 0.4); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .room-list { list-style: none; margin-bottom: 25px; }
+        .room-item {
+            padding: 12px 15px;
+            color: #cbd5e1;
+            border-radius: 12px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .room-item:hover, .room-item.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            box-shadow: inset 3px 0 0 #00f2fe;
+        }
+
+        /* Main Chat Area Right */
+        .chat-area { display: flex; flex-direction: column; height: 100%; }
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+        .chat-header h3 { font-size: 1.2rem; }
+        .chat-header p { color: #94a3b8; font-size: 0.85rem; }
+        
+        .messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        /* Custom Scrollbar */
+        .messages-container::-webkit-scrollbar { width: 6px; }
+        .messages-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+        /* Message Bubbles Layout */
+        .msg-wrapper { display: flex; flex-direction: column; max-width: 75%; }
+        .msg-wrapper.msg-left { align-self: flex-start; }
+        .msg-wrapper.msg-right { align-self: flex-end; align-items: flex-end; }
+
+        .msg-meta { font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px; padding: 0 5px; }
+        .msg-bubble {
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: #fff;
+            word-break: break-word;
+        }
+        .msg-left .msg-bubble {
+            background: rgba(255, 255, 255, 0.08);
+            border-bottom-left-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .msg-right .msg-bubble {
+            background: linear-gradient(135deg, #a855f7, #6366f1);
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+        }
+
+        /* Input Bottom Area */
+        .chat-input-area {
+            padding: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .chat-input-area input {
+            flex: 1;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            color: #fff;
+            outline: none;
+            font-size: 0.95rem;
+            transition: 0.3s;
+        }
+        .chat-input-area input:focus {
+            border-color: #a855f7;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.2);
+        }
+        .btn-send {
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00f2fe, #4facfe);
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+            transition: 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .btn-send:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.6);
+        }
     </style>
 </head>
 <body>
-    <h2>Cloud Chat Real-time</h2>
-    <div id="chat-box"></div>
-    <input type="text" id="message" placeholder="Nhập tin nhắn...">
-    <button onclick="sendMessage()">Gửi</button>
+
+    <div id="login-screen" class="glass-card">
+        <div class="logo-area">
+            <h2>Cloud Chat ☁️</h2>
+            <p>Đồ án Điện toán Đám mây - Realtime System</p>
+        </div>
+        <div class="input-group">
+            <input type="text" id="username-input" placeholder="Nhập biệt danh của bạn..." autocomplete="off">
+        </div>
+        <button class="btn-neon" onclick="joinChat()">Tham Gia Phòng Chat</button>
+    </div>
+
+    <div id="chat-screen" class="glass-card">
+        <div class="sidebar">
+            <div class="brand">☁️ Cloud Chat</div>
+            
+            <div class="section-title">Phòng Chat</div>
+            <ul class="room-list">
+                <li class="room-item active">⚡ Học tập</li>
+                <li class="room-item">🎭 Giải trí</li>
+                <li class="room-item">💬 Tán gẫu</li>
+            </ul>
+            
+            <div class="section-title" style="margin-top: auto;">Tài khoản hiện tại</div>
+            <div class="room-item" style="background: rgba(255,255,255,0.05); margin-bottom: 0; cursor: default;">
+                <span id="my-name-display" style="color: #00f2fe; font-weight: bold;">Chưa đặt tên</span>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <div class="chat-header">
+                <h3 id="current-room-title">Phòng: Học tập</h3>
+                <p>Ứng dụng thời gian thực chạy trên Cloud Render</p>
+            </div>
+            
+            <div class="messages-container" id="chat-box">
+                </div>
+            
+            <div class="chat-input-area">
+                <input type="text" id="message" placeholder="Nhập tin nhắn..." autocomplete="off">
+                <button class="btn-send" onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // Tự động kết nối tới server hiện tại (dù là localhost hay url của Render)
         const socket = io(); 
+        let currentUsername = "";
 
+        const loginScreen = document.getElementById('login-screen');
+        const chatScreen = document.getElementById('chat-screen');
+        const usernameInput = document.getElementById('username-input');
+        const myNameDisplay = document.getElementById('my-name-display');
         const chatBox = document.getElementById('chat-box');
         const messageInput = document.getElementById('message');
 
-        // Lắng nghe tin nhắn từ server gửi về
-        socket.on('receive_message', (data) => {
-            const msgElement = document.createElement('p');
-            msgElement.innerText = data;
-            chatBox.appendChild(msgElement);
-            chatBox.scrollTop = chatBox.scrollHeight; // Cuộn xuống cuối
+        // Bắt sự kiện Enter khi nhập tên
+        usernameInput.addEventListener("keyup", function(event) {
+            if (event.key === "Enter") joinChat();
         });
 
+        // Bắt sự kiện Enter khi gõ tin nhắn
+        messageInput.addEventListener("keyup", function(event) {
+            if (event.key === "Enter") sendMessage();
+        });
+
+        // Hàm xử lý khi bấm nút Tham gia
+        function joinChat() {
+            const name = usernameInput.value.trim();
+            if (name === "") {
+                alert("Vui lòng điền một biệt danh hợp lệ!");
+                return;
+            }
+            currentUsername = name;
+            myNameDisplay.innerText = "● " + currentUsername;
+            
+            // Ẩn màn hình Login, Hiện màn hình Chat dạng Grid
+            loginScreen.style.display = "none";
+            chatScreen.style.display = "grid";
+            
+            // Gửi thông báo hệ thống lên server (tùy chọn)
+            socket.emit('send_message', {
+                user: "Hệ thống",
+                text: `${currentUsername} đã tham gia phòng chat.`
+            });
+        }
+
+        // Thay đổi cấu trúc gửi tin nhắn (Bao gồm cả Tên + Nội dung)
         function sendMessage() {
-            const msg = messageInput.value;
-            if(msg.trim() !== "") {
-                socket.emit('send_message', msg); // Gửi lên server
+            const msgText = messageInput.value.trim();
+            if(msgText !== "" && currentUsername !== "") {
+                const packet = {
+                    user: currentUsername,
+                    text: msgText
+                };
+                socket.emit('send_message', packet); 
                 messageInput.value = "";
             }
         }
+
+        // Lắng nghe dữ liệu gói tin nhắn từ server gửi về
+        socket.on('receive_message', (data) => {
+            const isMe = (data.user === currentUsername);
+            const isSystem = (data.user === "Hệ thống");
+            
+            const wrapper = document.createElement('div');
+            
+            if (isSystem) {
+                wrapper.className = "msg-wrapper";
+                wrapper.style.alignSelf = "center";
+                wrapper.innerHTML = `<span class="msg-meta" style="color: #a855f7; text-align:center;">${data.text}</span>`;
+            } else {
+                wrapper.className = isMe ? "msg-wrapper msg-right" : "msg-wrapper msg-left";
+                wrapper.innerHTML = `
+                    <span class="msg-meta">${data.user}</span>
+                    <div class="msg-bubble">${data.text}</div>
+                `;
+            }
+            
+            chatBox.appendChild(wrapper);
+            chatBox.scrollTop = chatBox.scrollHeight; // Tự cuộn xuống dưới
+        });
     </script>
 </body>
 </html>
