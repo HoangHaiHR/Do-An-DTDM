@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đồ Án Cloud Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f7f6; }
+        #chat-box { width: 400px; height: 300px; border: 1px solid #ccc; background: #fff; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
+        input { width: 310px; padding: 8px; }
+        button { padding: 8px; }
+    </style>
+</head>
+<body>
+    <h2>Cloud Chat Real-time</h2>
+    <div id="chat-box"></div>
+    <input type="text" id="message" placeholder="Nhập tin nhắn...">
+    <button onclick="sendMessage()">Gửi</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Tự động kết nối tới server hiện tại (dù là localhost hay url của Render)
+        const socket = io(); 
+
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message');
+
+        // Lắng nghe tin nhắn từ server gửi về
+        socket.on('receive_message', (data) => {
+            const msgElement = document.createElement('p');
+            msgElement.innerText = data;
+            chatBox.appendChild(msgElement);
+            chatBox.scrollTop = chatBox.scrollHeight; // Cuộn xuống cuối
+        });
+
+        function sendMessage() {
+            const msg = messageInput.value;
+            if(msg.trim() !== "") {
+                socket.emit('send_message', msg); // Gửi lên server
+                messageInput.value = "";
+            }
+        }
+    </script>
+</body>
+</html>
