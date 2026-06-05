@@ -277,6 +277,24 @@
         const chatBox = document.getElementById('chat-box');
         const messageInput = document.getElementById('message');
 
+        // LẮNG NGHE LỊCH SỬ TIN NHẮN TỪ SERVER KHI VỪA VÀO PHÒNG
+socket.on('load_history', (messages) => {
+    // Xóa sạch khung chat trước khi nạp lịch sử (tránh trùng lặp)
+    chatBox.innerHTML = ""; 
+    
+    messages.forEach(data => {
+        const isMe = (data.user === currentUsername);
+        const wrapper = document.createElement('div');
+        wrapper.className = isMe ? "msg-wrapper msg-right" : "msg-wrapper msg-left";
+        wrapper.innerHTML = `
+            <span class="msg-meta">${data.user}</span>
+            <div class="msg-bubble">${data.text}</div>
+        `;
+        chatBox.appendChild(wrapper);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight; // Cuộn xuống cuối
+});
+
         // Bắt sự kiện Enter khi nhập tên
         usernameInput.addEventListener("keyup", function(event) {
             if (event.key === "Enter") joinChat();
