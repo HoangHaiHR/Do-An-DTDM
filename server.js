@@ -8,7 +8,7 @@ app.use(express.static('public'));
 
 // 2. KẾT NỐI ĐẾN MONGODB ATLAS (Thay chuỗi kết nối của bạn vào đây)
 // NHỚ: Thay <username> và <password> bằng tài khoản bạn tạo ở Bước 1
-const MONGO_URI = "mongodb+srv://hoanghai006_db_server:<Hai@120906*>@hoanghai.73jerar.mongodb.net/?appName=HoangHai";
+const MONGO_URI = "mongodb+srv://hoanghai006_db_server:Hai120906@hoanghai.73jerar.mongodb.net/?appName=HoangHai";
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log("👉 Đã kết nối thành công tới MongoDB Atlas Cloud!"))
